@@ -4,47 +4,47 @@ import {
   calculateNextValue,
   calculateWinner,
 } from "../helpers/index";
-import { useLocalStorageState } from "../hooks/useLocalStorageState";
+import { useLocalStorageReducer, SELECT_SQUARE,RESTART_GAME,SET_CURRENT_STEP } from "../hooks/useLocalStorageReducer";
 import { History } from "./History";
 
-function Board() {
-  const [history, setHistory] = useLocalStorageState("squares", [
-    Array(9).fill(null),
-  ]);
-  const [currentStep, setCurrentStep] = useLocalStorageState("currentStep", 0);
-  const currentSquare = history[currentStep];
-  const nextValue = calculateNextValue(currentSquare);
-  const winner = calculateWinner(currentSquare);
-  const status = calculateStatus(winner, currentSquare, nextValue);
 
-  function selectSquare(i) {
-    if (winner || currentSquare[i]) {
+
+
+
+function Board() {
+  
+  const[state, dispatch] = useLocalStorageReducer("squares", {history:[Array(9).fill(null)], currentStep:0})
+
+  const squares = state.history[state.currentStep];
+
+  const nextValue = calculateNextValue(squares);
+  const winner = calculateWinner(squares);
+  const status = calculateStatus(winner, squares, nextValue);
+
+  function selectSquare(square) {
+    if (winner || squares[square]) {
       return;
     }
-    const squaresCopy = [...currentSquare];
-    squaresCopy[i] = nextValue;
-
-    const slicedHistory = history.slice(0, currentStep+1);
-    
-    setHistory([...slicedHistory, squaresCopy]);
-    setCurrentStep(slicedHistory.length);
+    dispatch({type:SELECT_SQUARE, payload: {square, nextValue}})
   }
 
+  
+
   function restart() {
-    setHistory([Array(9).fill(null)]);
-    setCurrentStep(0);
+    dispatch({type:RESTART_GAME})
   }
 
   function renderSquare(i) {
     return (
       <button className="square" onClick={() => selectSquare(i)}>
-        {currentSquare[i]}
+        {squares[i]}
       </button>
     );
   }
 
   function handleButtonClick(i) {
-    setCurrentStep(i);
+    dispatch({type:SET_CURRENT_STEP, payload:i})
+    
   }
 
   return (
@@ -68,7 +68,7 @@ function Board() {
       <button className="restart" onClick={restart}>
         restart
       </button>
-      <History history={history} handleClick={handleButtonClick} currentStep={currentStep}/>
+      <History history={state.history} handleClick={handleButtonClick} currentStep={state.currentStep}/>
     </div>
   );
 }
